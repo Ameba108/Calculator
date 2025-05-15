@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Knetic/govaluate"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -64,6 +65,16 @@ func (db *DB) GetExpressionByID(userID int, id string) (*mod.Expression, error) 
 		}
 		return nil, err
 	}
+
+	if expr.Status == "error" {
+		return &expr, nil
+	}
+
+	if _, err := govaluate.NewEvaluableExpression(expr.Expr); err != nil {
+		expr.Status = "error"
+		db.Exec("UPDATE expressions SET status = ? WHERE id = ?", "error", expr.ID)
+	}
+
 	return &expr, nil
 }
 

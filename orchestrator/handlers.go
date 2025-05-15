@@ -4,7 +4,9 @@ import (
 	mod "calc/internal/models"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,9 +34,18 @@ func (o *Orchestrator) CalculateHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if !isValidMathExpression(req.Expression) {
+		http.Error(w, "Invalid expression: only numbers, +, -, *, /, (), and spaces are allowed", http.StatusBadRequest)
+		return
+	}
+	if containsDivisionByZero(req.Expression) {
+		http.Error(w, "Invalid expression: division by zero is not allowed", http.StatusBadRequest)
+		return
+	}
+
 	expr, err := govaluate.NewEvaluableExpression(req.Expression)
 	if err != nil {
-		http.Error(w, "Invalid expression", http.StatusBadRequest)
+		http.Error(w, "Invalid expression syntax", http.StatusBadRequest)
 		return
 	}
 
@@ -57,9 +68,37 @@ func (o *Orchestrator) CalculateHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
 }
 
+func isValidMathExpression(expr string) bool {
+	allowedChars := `0123456789+-*/(). `
+	for _, char := range expr {
+		if !strings.ContainsRune(allowedChars, char) {
+			return false
+		}
+	}
+	return true
+}
+
+func containsDivisionByZero(expr string) bool {
+	return strings.Contains(expr, "/0") || strings.Contains(expr, "/ 0")
+}
+
 func (o *Orchestrator) evaluateExpression(id string, expr *govaluate.EvaluableExpression, userID int) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Expression evaluation failed (ID: %s): %v", id, r)
+			o.db.Exec("UPDATE expressions SET status = ? WHERE id = ? AND user_id = ?", "error", id, userID)
+		}
+	}()
+
 	result, err := expr.Evaluate(nil)
 	if err != nil {
+		log.Printf("Expression evaluation error (ID: %s): %v", id, err)
+		o.db.Exec("UPDATE expressions SET status = ? WHERE id = ? AND user_id = ?", "error", id, userID)
+		return
+	}
+
+	if _, ok := result.(float64); !ok {
+		log.Printf("Expression returned non-float result (ID: %s)", id)
 		o.db.Exec("UPDATE expressions SET status = ? WHERE id = ? AND user_id = ?", "error", id, userID)
 		return
 	}
@@ -77,7 +116,20 @@ func (o *Orchestrator) ExpressionsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	json.NewEncoder(w).Encode(expressions)
+	safeExpressions := make([]*mod.Expression, 0, len(expressions))
+	for _, expr := range expressions {
+		if expr.Status == "error" {
+			safeExpressions = append(safeExpressions, expr)
+			continue
+		}
+
+		if _, err := govaluate.NewEvaluableExpression(expr.Expr); err != nil {
+			expr.Status = "error"
+		}
+		safeExpressions = append(safeExpressions, expr)
+	}
+
+	json.NewEncoder(w).Encode(safeExpressions)
 }
 
 func (o *Orchestrator) ExpressionHandler(w http.ResponseWriter, r *http.Request) {
