@@ -9,33 +9,33 @@
 После использования калькулятора, само выражение, его статус и его ответ будут также хранится в базе данных.
 
 Установка:
-1. git clone https://github.com/Ameba108/Calculator
-2. cd Calculator
+1. `git clone https://github.com/Ameba108/Calculator`
+2. `cd Calculator`
 
 Запуск:
 
 Чтобы запустить калькулятор, нужно запустить оркестратор, агент и сам калькулятор. 
 1. Запуск оркестратора:
    
-   cd orchestrator
+   `cd orchestrator`
    
-   go run .
+   `go run .`
 3. Запуск агента:
    
-   cd agent
+   `cd agent`
    
-   go run .
+   `go run .`
 5. Запуск калькулятора:
    
-   cd internal/calculator
+   `cd internal/calculator`
    
-   go run .
+   `go run .`
 
 # Примеры 
 Вот пример post-запросов (лучше всего запросы делать через postman):
 1. Регистрация
-   
-curl -X POST http://localhost:8080/api/v1/register -H "Content-Type: application/json" -d "{\"login\": \"<логин>\", \"password\": \"<пароль>\"}"
+
+`curl -X POST http://localhost:8080/api/v1/register -H "Content-Type: application/json" -d "{\"login\": \"<логин>\", \"password\": \"<пароль>\"}"`
 
 ![Снимок экрана 2025-05-11 164001](https://github.com/user-attachments/assets/0d7c1d38-df77-43d0-a7c7-451d715426b6)
 
@@ -43,7 +43,7 @@ curl -X POST http://localhost:8080/api/v1/register -H "Content-Type: application
 
 2. Авторизация
 
-curl -X POST http://localhost:8080/api/v1/login -H "Content-Type: application/json" -d "{\"login\": \"<логин>\", \"<пароль>\": \"1234\"}"
+`curl -X POST http://localhost:8080/api/v1/login -H "Content-Type: application/json" -d "{\"login\": \"<логин>\", \"<пароль>\": \"1234\"}"`
 
 ![Снимок экрана 2025-05-11 164042](https://github.com/user-attachments/assets/7b984228-9e5c-4913-87da-825632ce5a2d)
 
@@ -53,7 +53,7 @@ curl -X POST http://localhost:8080/api/v1/login -H "Content-Type: application/js
 
 В заголовок обязательно ставится токен юзера, иначе калькулятор не примет выражение!
 
-curl -X POST http://localhost:8080/api/v1/calculate -H "Content-Type: application/json" -H "Authorization: <токен>" -d "{\"expression\":  \"выражение\"}"
+`curl -X POST http://localhost:8080/api/v1/calculate -H "Content-Type: application/json" -H "Authorization: <токен>" -d "{\"expression\":  \"выражение\"}"`
 
 ![Снимок экрана 2025-05-11 164229](https://github.com/user-attachments/assets/db5c1c0b-a5c5-4cc4-897d-b51dff24ec85)
 
@@ -65,13 +65,13 @@ Get-запросы
 
 1. Получение результата определенного выражения
 
-curl -X POST http://localhost:8080/api/v1/expressions/<id> -H "Content-Type: application/json" -H "Authorization: <токен>"
+`curl -X POST http://localhost:8080/api/v1/expressions/<id> -H "Content-Type: application/json" -H "Authorization: <токен>"`
 
 ![Снимок экрана 2025-05-11 164451](https://github.com/user-attachments/assets/706b0cea-f1e7-4b39-af77-871e69a11f9f)
 
 2. Получение списка запросов
 
-curl -X POST http://localhost:8080/api/v1/expressions -H "Content-Type: application/json" -H "Authorization: <токен>"
+`curl -X POST http://localhost:8080/api/v1/expressions -H "Content-Type: application/json" -H "Authorization: <токен>"`
 
 ![Снимок экрана 2025-05-11 164416](https://github.com/user-attachments/assets/bd9a884b-2736-45f0-8d2d-6ad48d5dfe4f)
 
